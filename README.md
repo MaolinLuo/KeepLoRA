@@ -118,7 +118,7 @@ pip install flash_attn-2.6.3+cu123torch2.3cxx11abiFALSE-cp310-cp310-linux_x86_64
 
 ### Hardware
 
-The experiments can be reproduced using 4$\times$NVIDIA H100 GPU with 80GB of memory.
+The experiments can be reproduced using 4 $\times$ NVIDIA H100 GPU with 80GB of memory.
 
 ### Model
 
