@@ -1,0 +1,12 @@
+{
+  "gpu_num": 4,
+  "rank": 32,
+  "model_name": "/your_model_path/llava-7b-v1.5",
+  "previous_model": "./checkpoints/UCIT/LLaVA-1.5/LoRA/Task3_llava_lora_merged",
+  "vision_tower": "/your_model_path/clip-vit-large-patch14-336",
+  "output_dir": "./checkpoints/UCIT/LLaVA-1.5/LoRA/Task4_llava_lora",
+  "epoch": 1,
+  "batch_size": 8,
+  "grad_acc": 2,
+  "lr": 2e-4
+}

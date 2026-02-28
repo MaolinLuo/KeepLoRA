@@ -1,0 +1,6 @@
+{
+  "train_path": "/your_dataset_path/UCIT/Flickr30k/train_brief_4w.json",
+  "test_path": "/your_dataset_path/UCIT/Flickr30k/test_3000.json",
+  "anno_path": "/your_dataset_path/UCIT/Flickr30k/val_coco_type_3000.json",
+  "image_folder": "/your_dataset_path/UCIT/datasets"
+}

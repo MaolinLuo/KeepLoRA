@@ -1,0 +1,5 @@
+{
+  "train_path": "/your_dataset_path/UCIT/CLEVR/train_4w.json",
+  "test_path": "/your_dataset_path/UCIT/CLEVR/test_3000.json",
+  "image_folder": "/your_dataset_path/UCIT/datasets"
+}

@@ -1,0 +1,29 @@
+dataset_root: "/your_dataset_path/MTIL"
+model_backbone_name: 'ViT-B/16'
+prec: "amp"
+input_size: (224, 224)
+dataset: "MTIL"
+add_info: "keeplora+_order2"
+seed: 42
+eval_only: False
+
+tasks: ['StanfordCars', 'Food', 'MNIST', 'OxfordPet', 'Flowers', 'SUN397', 'Aircraft', 'Caltech101', 'DTD', 'EuroSAT', 'CIFAR100']
+
+optim:
+  batch_size: 64
+  name: "AdamW"
+  lr: 1e-3
+  weight_decay: 0.01
+  epoch_list: [5, 1, 1, 5, 5, 5, 5, 5, 5, 5, 5]
+  lr_scheduler: "OneCycleLR"
+
+v_keeplora: ['q', 'k', 'v', 'o']    # vision encoder
+t_keeplora: ['q', 'k', 'v', 'o']    # text encoder
+v_adapter_dim: 16
+t_adapter_dim: 16
+v_prin_subspace_threshold: 0.99
+t_prin_subspace_threshold: 0.99
+v_prin_subspace_threshold2: 0.85
+t_prin_subspace_threshold2: 0.2
+
+classifier: 'CosineClassifier'

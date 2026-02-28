@@ -1,0 +1,5 @@
+{
+  "gpu_num": 8,
+  "stage": "LoRA-task2",
+  "model_path": "./checkpoints/UCIT/LLaVA-1.5/LoRA/Task2_llava_lora_merged"
+}

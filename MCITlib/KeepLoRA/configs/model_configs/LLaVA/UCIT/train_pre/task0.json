@@ -1,0 +1,5 @@
+{
+  "model_path": "/your_model_path/llava-7b-v1.5",
+  "output_dir": "./checkpoints/UCIT/LLaVA-1.5/LoRA/Task0_llava_lora_gradients"
+}
+

@@ -1,0 +1,17 @@
+dataset_root: "/your_dataset_path/MTIL"
+model_backbone_name: 'ViT-B/16'
+prec: "amp"
+input_size: (224, 224)
+dataset: "MTIL"
+add_info: "zero_shot"
+seed: 42
+
+zero_shot: True
+# Fig. 1a and 1b
+# v_svd_param_names: ['attn.in_proj_weight', 'attn.out_proj.weight']
+# v_svd_alphas: [0.9, 0.9]
+# t_svd_param_names: ['attn.in_proj_weight', 'attn.out_proj.weight']
+# t_svd_alphas: [0.9, 0.9]
+
+tasks: ['Aircraft', 'Caltech101', 'CIFAR100', 'DTD', 'EuroSAT', 'Flowers', 'Food', 'MNIST', 'OxfordPet', 'StanfordCars', 'SUN397']
+

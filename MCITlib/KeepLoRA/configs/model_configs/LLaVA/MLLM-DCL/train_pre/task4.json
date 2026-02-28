@@ -1,0 +1,8 @@
+{
+  "gpu_num": 8,
+  "stage": "LoRA-task4",
+  "model_path": "./checkpoints/MLLM-DCL/LLaVA-1.5/LoRA/Task3_llava_lora_merged",
+  "space_path": "./checkpoints/MLLM-DCL/LLaVA-1.5/LoRA/Task3_llava_lora_gradients",
+  "rank": 64,
+  "output_dir": "./checkpoints/MLLM-DCL/LLaVA-1.5/LoRA/Task4_llava_lora_gradients"
+}
