@@ -5,14 +5,13 @@ This repository provides the official implementations of KeepLoRA and KeepLoRA++
 - **`v1`** contains the code for [KeepLoRA: Continual Learning with Residual Gradient Adaptation](https://openreview.net/forum?id=T3Vc5fkTzV), accepted at **ICLR 2026**.
 - **`v2`** contains the code for [KeepLoRA++: Continual Learning with Layer-Scaled Residual Gradient Adaptation](https://arxiv.org/abs/2606.16256), which extends KeepLoRA and evaluates continual learning on image classification, visual question answering, and video understanding.
 
-The video-understanding code will be added to `v2` separately and is not included in the current repository yet.
-
 ## Hardware
 
 | Task | Hardware |
 | --- | --- |
 | Image classification (MTIL) | 1 x NVIDIA RTX 4090 (24 GB) |
 | Visual question answering (MLLM-DCL and UCIT) | 4 x NVIDIA H100 (80 GB each); at least 2 x H100 are supported |
+| Video understanding (CL-VISTA) | 2 x NVIDIA H100 (80 GB each) |
 
 ## Experiments on MTIL Benchmark
 
@@ -111,8 +110,8 @@ Create an environment and install dependencies:
 
 ```bash
 cd ./DCL_UCIT/KeepLoRA
-conda create -n MCITlib python=3.10 -y
-conda activate MCITlib
+conda create -n keeplora_vqa python=3.10 -y
+conda activate keeplora_vqa
 pip install torch==2.3.0 torchvision==0.18.0 torchaudio==2.3.0 --index-url https://download.pytorch.org/whl/cu121
 pip install -e .
 pip install -e ".[train]"
@@ -168,6 +167,68 @@ bash scripts/Train_DCL/train_all.sh
 
 # run KeepLoRA++ on UCIT setting
 bash scripts/Train_UCIT/train_all.sh
+```
+
+## Experiments on CL-VISTA Benchmark
+
+The video-understanding implementation is based on Video-LLaVA and follows the setup of [MCITlib](https://github.com/Ghy0501/MCITlib). Please refer to that repository for optional benchmarks and more detailed preparation instructions.
+
+### Environment
+
+Create an environment using the original Video-LLaVA setup:
+
+```bash
+cd ./CL_VISTA/KeepLoRA
+conda create -n keeplora_vista python=3.10 -y
+conda activate keeplora_vista
+pip install --upgrade pip
+pip install -e .
+pip install -e ".[train]"
+pip install decord opencv-python git+https://github.com/facebookresearch/pytorchvideo.git@28fe037d212663c6a24f373b94cc5d478c8c1a1d
+```
+
+Please install a compatible FlashAttention build for your CUDA and PyTorch versions before training.
+
+The evaluation driver uses the `keeplora_vista` environment for inference and a separate `transformers` environment for the local judge model. If your judge environment has a different name, update `EVAL_ENV` in [`Eval_CVU.sh`](CL_VISTA/KeepLoRA/scripts/MCITlib/Eval/Eval_CVU.sh).
+
+### Model
+
+Download Video-LLaVA, its video tower, the CLIP text tower, and the judge model:
+
+```bash
+huggingface-cli download LanguageBind/Video-LLaVA-7B --local-dir /your_model_path/Video-LLaVA-7B
+huggingface-cli download LanguageBind/LanguageBind_Video_merge --local-dir /your_model_path/LanguageBind_Video_merge
+huggingface-cli download openai/clip-vit-large-patch14-336 --local-dir /your_model_path/clip-vit-large-patch14-336
+huggingface-cli download Qwen/Qwen3-30B-A3B-Instruct-2507 --local-dir /your_model_path/Qwen3-30B-A3B-Instruct-2507
+```
+
+Update [`videollava.json`](CL_VISTA/configs/model_configs/videollava.json) and the model and judge paths in the training and evaluation configs. The files under [`CL_VISTA/examples/Video-LLaVA-7B`](CL_VISTA/examples/Video-LLaVA-7B) show the required changes to the downloaded model's `config.json` and `generation_config.json` and should be kept as references.
+
+### Dataset preparation
+
+Download [CL-VISTA](https://huggingface.co/datasets/MLLM-CL/CL-VISTA), organize it as follows, and update the paths under [`CL_VISTA/configs/data_configs/CL-VISTA`](CL_VISTA/configs/data_configs/CL-VISTA):
+
+```sh
+/your_dataset_path/CL-VISTA
+ ├─ Counting
+ ├─ GUI
+ ├─ Movie
+ ├─ Science
+ ├─ Space
+ ├─ Sports
+ ├─ STAR
+ ├─ Traffic
+ └─ train_VISTA_joint.json
+```
+
+The `Space` split requires the additional ScanNet preparation described in the [MCITlib README](https://github.com/Ghy0501/MCITlib#benchmarks).
+
+### Reproduction
+
+Replace `/your_path/MCITlib_v3` in the CL-VISTA shell scripts with the absolute path to `CL_VISTA`, and update `/your_conda_path`, `/your_model_path`, `/your_data_path`, and the checkpoint paths for your machine. Then run from `CL_VISTA/KeepLoRA`:
+
+```bash
+bash scripts/MCITlib/Train/train_CVU.sh
 ```
 
 ## Citation
