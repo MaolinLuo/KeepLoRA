@@ -8,6 +8,16 @@ from model.utils import low_rank_approx
 
 from .peft_modules import *
 
+def build_layer_scales(n_layers, start, end, gamma=0.3):
+    scales = [1.0] * n_layers
+    tuned_len = max(end - start, 1)
+    for layer_id in range(start, end):
+        relative_id = layer_id - start
+        if tuned_len == 1:
+            scales[layer_id] = 1.0
+        else:
+            scales[layer_id] = gamma + (1.0 - gamma) * relative_id / (tuned_len - 1)
+    return scales
 
 class ViT_Tuner(nn.Module):
     """ All instance variables in this class will be optimized.
@@ -52,6 +62,7 @@ class ViT_Tuner(nn.Module):
             _start, _end = n_layers - partial, n_layers
         elif isinstance(partial, list):
             _start, _end = partial[0], partial[1]
+        layer_scales = build_layer_scales(n_layers, _start, _end, gamma=0.2)
 
         if use_full_tuning:
             block_tuned = blocks[_start: _end]
@@ -64,12 +75,15 @@ class ViT_Tuner(nn.Module):
             if not set(use_keeplora).issubset(valid_keeplora_keys):
                 raise ValueError(f"use_keeplora can only contain a subset of {valid_keeplora_keys}, got {use_keeplora}")
             keeplora_list = nn.ModuleList([
-                *[None] * (_start),
-                *[nn.ModuleDict({
-                    k: KeepLoRA(in_dim=emb_dim, out_dim=emb_dim, r=lora_rank, lora_alpha=1, use_rslora=False, dtype=dtype) for k in use_keeplora
-                }) for _ in range(_start, _end)],
-                *[None] * (n_layers - _end)
+                nn.ModuleDict({
+                    k: KeepLoRA(in_dim=emb_dim, out_dim=emb_dim, r=lora_rank, lora_alpha=1, use_rslora=False, dtype=dtype, layer_scale=layer_scales[layer_id],
+                    )for k in use_keeplora
+                })if _start <= layer_id < _end else None
+                for layer_id in range(n_layers)
             ])
+            print("ViT KeepLoRA layer scales:")
+            for layer_id in range(_start, _end):
+                print(f"layer {layer_id}: scale={layer_scales[layer_id]:.4f}, keys={list(keeplora_list[layer_id].keys())}")
         else:
             keeplora_list = nn.ModuleList([None] * n_layers)
 

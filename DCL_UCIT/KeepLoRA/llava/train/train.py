@@ -12,7 +12,7 @@ import transformers
 import subprocess
 
 from llava.constants import IGNORE_INDEX, IMAGE_TOKEN_INDEX, DEFAULT_IMAGE_TOKEN, DEFAULT_IM_START_TOKEN, DEFAULT_IM_END_TOKEN
-from peft.utils import WEIGHTS_NAME, set_peft_model_state_dict
+from llava.peft.utils import WEIGHTS_NAME, set_peft_model_state_dict
 from torch.utils.data import Dataset
 from llava.train.llava_trainer import LLaVATrainer
 
@@ -26,7 +26,7 @@ def freeze_lora_A_matrices(model, local_rank=-1):
     Freeze all LoRA A matrices in the model.
     Compatible with DeepSpeed ZeRO.
     """
-    from peft.tuners.lora import LoraLayer
+    from llava.peft.tuners.lora import LoraLayer
     
     frozen_params = 0
     for name, module in model.named_modules():
@@ -51,7 +51,7 @@ def initialize_lora_weights_custom(model, gradient_dict, lora_r, local_rank=-1):
         lora_r: LoRA rank (for verification purposes)
         local_rank: Local rank for distributed training
     """
-    from peft.tuners.lora import LoraLayer
+    from llava.peft.tuners.lora import LoraLayer
     import deepspeed
     
     # Check if using DeepSpeed
@@ -930,7 +930,7 @@ def train():
         model.model.requires_grad_(False)
 
     if training_args.bits in [4, 8]:
-        from peft import prepare_model_for_kbit_training
+        from llava.peft import prepare_model_for_kbit_training
         model.config.torch_dtype=(torch.float32 if training_args.fp16 else (torch.bfloat16 if training_args.bf16 else torch.float32))
         model = prepare_model_for_kbit_training(model, use_gradient_checkpointing=training_args.gradient_checkpointing)
 
@@ -945,10 +945,27 @@ def train():
 
     # target_modules=find_all_linear_names(model)=['down_proj', 'q_proj', 'v_proj', 'o_proj', 'gate_proj', 'up_proj', 'k_proj']
     if training_args.lora_enable:
-        from peft import LoraConfig, get_peft_model
+        from llava.peft import LoraConfig, get_peft_model
+        num_layers = getattr(model.config, "num_hidden_layers", None)
+        if num_layers is None:
+            num_layers = getattr(model.config, "n_layers", None)
+        if not isinstance(num_layers, int) or num_layers < 2:
+            raise ValueError(
+                "Layer-wise LoRA scaling requires at least two transformer layers in "
+                "model.config.num_hidden_layers or model.config.n_layers."
+            )
+
+        base_alpha = training_args.lora_alpha
+        start_scale = 0.2
+        end_scale = 1.0
+        lora_alpha_list = [
+            base_alpha * (start_scale + (end_scale - start_scale) * i / (num_layers - 1))
+            for i in range(num_layers)
+        ]
+        rank0_print(f"Using layer-wise LoRA alpha: {lora_alpha_list[0]:.4f} -> {lora_alpha_list[-1]:.4f}")
         lora_config = LoraConfig(
             r=training_args.lora_r,
-            lora_alpha=training_args.lora_alpha,
+            lora_alpha=lora_alpha_list,
             target_modules=find_all_linear_names(model),
             lora_dropout=training_args.lora_dropout,
             bias=training_args.lora_bias,
@@ -1050,7 +1067,7 @@ def train():
         model.initialize_vision_tokenizer(model_args, tokenizer=tokenizer)
 
     if training_args.bits in [4, 8]:
-        from peft.tuners.lora import LoraLayer
+        from llava.peft.tuners.lora import LoraLayer
         for name, module in model.named_modules():
             if isinstance(module, LoraLayer):
                 if training_args.bf16:

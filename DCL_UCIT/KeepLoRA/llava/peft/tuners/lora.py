@@ -74,7 +74,10 @@ class LoraConfig(PeftConfig):
             "For example, ['q', 'v'] or '.*decoder.*(SelfAttention|EncDecAttention).*(q|v)$' "
         },
     )
-    lora_alpha: int = field(default=8, metadata={"help": "Lora alpha"})
+    lora_alpha: Union[int, float, List[float]] = field(
+        default=8,
+        metadata={"help": "Lora alpha. Can be a scalar or a layer-wise alpha list."}
+    )
     lora_dropout: float = field(default=0.0, metadata={"help": "Lora dropout"})
     fan_in_fan_out: bool = field(
         default=False,
@@ -235,11 +238,52 @@ class LoraModel(torch.nn.Module):
                         target_module_found = False
         return target_module_found
 
-    def _create_new_module(self, lora_config, adapter_name, target):
+    def _get_layer_index_from_key(self, key):
+        """
+        Extract transformer layer index from module name.
+
+        Examples:
+            model.model.layers.0.self_attn.q_proj -> 0
+            base_model.model.model.layers.31.mlp.down_proj -> 31
+        """
+        match = re.search(r"(?:^|\.)layers\.(\d+)(?:\.|$)", key)  # model.layers.0
+        if match is not None:
+            return int(match.group(1))
+
+        return None
+
+    def _get_lora_alpha_for_key(self, lora_config, key):
+        """
+        Resolve layer-wise lora_alpha.
+
+        If lora_alpha is a scalar, return it directly.
+        If lora_alpha is a list, use the layer index parsed from module key.
+        """
+        lora_alpha = lora_config.lora_alpha
+
+        if isinstance(lora_alpha, (list, tuple)):
+            layer_idx = self._get_layer_index_from_key(key)
+
+            if layer_idx is None:
+                raise ValueError(
+                    f"Layer-wise lora_alpha is enabled, but cannot parse layer index from module key: {key}"
+                )
+
+            if layer_idx < 0 or layer_idx >= len(lora_alpha):
+                raise ValueError(
+                    f"Parsed layer index {layer_idx} from key {key}, "
+                    f"but lora_alpha has length {len(lora_alpha)}."
+                )
+
+            return float(lora_alpha[layer_idx])
+
+        return float(lora_alpha)
+
+    def _create_new_module(self, lora_config, adapter_name, target, current_lora_alpha):
         bias = hasattr(target, "bias") and target.bias is not None
         kwargs = {
             "r": lora_config.r,
-            "lora_alpha": lora_config.lora_alpha,
+            "lora_alpha": current_lora_alpha,
             "lora_dropout": lora_config.lora_dropout,
             "fan_in_fan_out": lora_config.fan_in_fan_out,
             "init_lora_weights": lora_config.init_lora_weights,
@@ -322,12 +366,13 @@ class LoraModel(torch.nn.Module):
 
             is_target_modules_in_base_model = True
             parent, target, target_name = _get_submodules(self.model, key)
+            current_lora_alpha = self._get_lora_alpha_for_key(lora_config, key)
 
             if isinstance(target, LoraLayer) and isinstance(target, torch.nn.Conv2d):
                 target.update_layer_conv2d(
                     adapter_name,
                     lora_config.r,
-                    lora_config.lora_alpha,
+                    current_lora_alpha,
                     lora_config.lora_dropout,
                     lora_config.init_lora_weights,
                 )
@@ -335,7 +380,7 @@ class LoraModel(torch.nn.Module):
                 target.update_layer_embedding(
                     adapter_name,
                     lora_config.r,
-                    lora_config.lora_alpha,
+                    current_lora_alpha,
                     lora_config.lora_dropout,
                     lora_config.init_lora_weights,
                 )
@@ -344,12 +389,12 @@ class LoraModel(torch.nn.Module):
                 target.update_layer(
                     adapter_name,
                     lora_config.r,
-                    lora_config.lora_alpha,
+                    current_lora_alpha,
                     lora_config.lora_dropout,
                     lora_config.init_lora_weights,
                 )
             else:
-                new_module = self._create_new_module(lora_config, adapter_name, target)
+                new_module = self._create_new_module(lora_config, adapter_name, target, current_lora_alpha)
                 self._replace_module(parent, target_name, new_module, target)
 
         if not is_target_modules_in_base_model:

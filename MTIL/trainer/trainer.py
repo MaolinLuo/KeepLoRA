@@ -182,13 +182,13 @@ class Trainer:
                         # Initialize q, k, v LoRA matrices
                         if 'q' in module_dict and 'q' in cfg.v_keeplora:
                             module_dict['q'].lora_A.data.copy_(q_A.to(module_dict['q'].lora_A.device))
-                            module_dict['q'].lora_B.data.copy_(q_B.to(module_dict['q'].lora_B.device))
+                            module_dict['q'].lora_B.data.zero_()
                         if 'k' in module_dict and 'k' in cfg.v_keeplora:
                             module_dict['k'].lora_A.data.copy_(k_A.to(module_dict['k'].lora_A.device))
-                            module_dict['k'].lora_B.data.copy_(k_B.to(module_dict['k'].lora_B.device))
+                            module_dict['k'].lora_B.data.zero_()
                         if 'v' in module_dict and 'v' in cfg.v_keeplora:
                             module_dict['v'].lora_A.data.copy_(v_A.to(module_dict['v'].lora_A.device))
-                            module_dict['v'].lora_B.data.copy_(v_B.to(module_dict['v'].lora_B.device))
+                            module_dict['v'].lora_B.data.zero_()
                     
                     if out_proj_grad_key in named_grads:
                         out_proj_grad = named_grads[out_proj_grad_key]
@@ -204,7 +204,7 @@ class Trainer:
                         # Initialize o LoRA matrices
                         if 'o' in module_dict and 'o' in cfg.v_keeplora:
                             module_dict['o'].lora_A.data.copy_(o_A.to(module_dict['o'].lora_A.device))
-                            module_dict['o'].lora_B.data.copy_(o_B.to(module_dict['o'].lora_B.device))
+                            module_dict['o'].lora_B.data.zero_()
 
         if cfg.t_keeplora:
             # Process text transformer blocks
@@ -231,13 +231,13 @@ class Trainer:
                         # Initialize q, k, v LoRA matrices
                         if 'q' in module_dict and 'q' in cfg.t_keeplora:
                             module_dict['q'].lora_A.data.copy_(q_A.to(module_dict['q'].lora_A.device))
-                            module_dict['q'].lora_B.data.copy_(q_B.to(module_dict['q'].lora_B.device))
+                            module_dict['q'].lora_B.data.zero_()
                         if 'k' in module_dict and 'k' in cfg.t_keeplora:
                             module_dict['k'].lora_A.data.copy_(k_A.to(module_dict['k'].lora_A.device))
-                            module_dict['k'].lora_B.data.copy_(k_B.to(module_dict['k'].lora_B.device))
+                            module_dict['k'].lora_B.data.zero_()
                         if 'v' in module_dict and 'v' in cfg.t_keeplora:
                             module_dict['v'].lora_A.data.copy_(v_A.to(module_dict['v'].lora_A.device))
-                            module_dict['v'].lora_B.data.copy_(v_B.to(module_dict['v'].lora_B.device))
+                            module_dict['v'].lora_B.data.zero_()
                     
                     if out_proj_grad_key in named_grads:
                         out_proj_grad = named_grads[out_proj_grad_key]
@@ -253,7 +253,7 @@ class Trainer:
                         # Initialize o LoRA matrices
                         if 'o' in module_dict and 'o' in cfg.t_keeplora:
                             module_dict['o'].lora_A.data.copy_(o_A.to(module_dict['o'].lora_A.device))
-                            module_dict['o'].lora_B.data.copy_(o_B.to(module_dict['o'].lora_B.device))
+                            module_dict['o'].lora_B.data.zero_()
         
         print("KeepLoRA matrix initialization using gradients complete.")
 

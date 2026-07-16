@@ -8,7 +8,7 @@ import torch.nn.functional as F
 
 
 class KeepLoRA(nn.Module):
-    def __init__(self, in_dim: int, out_dim: int, r: int = 8, lora_alpha: int = 8, use_rslora: bool = False, dtype=None):
+    def __init__(self, in_dim: int, out_dim: int, r: int = 8, lora_alpha: int = 8, use_rslora: bool = False, dtype=None, layer_scale: float = 1.0):
         super().__init__()
 
         self.in_dim = in_dim
@@ -16,7 +16,7 @@ class KeepLoRA(nn.Module):
         self.rank = r
         self.scaling = lora_alpha / math.sqrt(r) if use_rslora else lora_alpha / r
         self.dtype = dtype
-
+        self.layer_scale = layer_scale
         self.reset_parameters()
 
     def reset_parameters(self, device=None):
@@ -67,7 +67,7 @@ class KeepLoRA(nn.Module):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         x = x @ self.lora_A
         x = x @ self.lora_B
-        x = self.scaling * x
+        x = self.scaling * self.layer_scale * x
         return x
 
     def get_delta_weight(self) -> torch.Tensor:
@@ -76,4 +76,4 @@ class KeepLoRA(nn.Module):
 
         delta_W = lora_A_param @ lora_B_param
 
-        return self.scaling * delta_W.T
+        return self.layer_scale * self.scaling * delta_W.T
