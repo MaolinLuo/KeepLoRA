@@ -3,7 +3,7 @@ model_backbone_name: 'ViT-B/16'
 prec: "amp"
 input_size: (224, 224)
 dataset: "MTIL"
-add_info: "keeplora+_order1"
+add_info: "keeplora++cls_order1"
 seed: 42
 eval_only: False
 

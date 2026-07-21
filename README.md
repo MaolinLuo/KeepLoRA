@@ -96,10 +96,10 @@ python main.py --config-path configs/keeplora_order1.yaml
 python main.py --config-path configs/keeplora_order2.yaml
 
 # run KeepLoRA++cls on order-I setting
-python main.py --config-path configs/keeplora+_order1.yaml
+python main.py --config-path configs/keeplora_cls_order1.yaml
 
 # run KeepLoRA++cls on order-II setting
-python main.py --config-path configs/keeplora+_order2.yaml
+python main.py --config-path configs/keeplora_cls_order2.yaml
 ```
 
 ## Experiments on MLLM-DCL and UCIT Benchmarks
